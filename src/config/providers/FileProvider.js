@@ -89,7 +89,7 @@ class FileProvider extends EventEmitter {
       }
       
       // 开始监听
-      this.watcher = fs.watch(this.filePath, async (eventType) => {
+      this.watcher = fs.watch(this.filePath, async eventType => {
         if (eventType === 'change') {
           logger.info(`配置文件已变更: ${this.filePath}`);
           
@@ -161,15 +161,15 @@ class FileProvider extends EventEmitter {
     const ext = path.extname(filePath).toLowerCase();
     
     switch (ext) {
-      case '.json':
-        return 'json';
-      case '.js':
-        return 'js';
-      case '.yaml':
-      case '.yml':
-        return 'yaml';
-      default:
-        return 'json'; // 默认使用JSON格式
+    case '.json':
+      return 'json';
+    case '.js':
+      return 'js';
+    case '.yaml':
+    case '.yml':
+      return 'yaml';
+    default:
+      return 'json'; // 默认使用JSON格式
     }
   }
   
@@ -181,55 +181,55 @@ class FileProvider extends EventEmitter {
    */
   _getDefaultParser() {
     switch (this.format) {
-      case 'json':
-        return content => JSON.parse(content);
+    case 'json':
+      return content => JSON.parse(content);
         
-      case 'js':
-        return content => {
-          // 使用临时文件路径
-          const tmpFile = path.join(
-            path.dirname(this.filePath),
-            `._tmp_${path.basename(this.filePath)}_${Date.now()}`
-          );
+    case 'js':
+      return content => {
+        // 使用临时文件路径
+        const tmpFile = path.join(
+          path.dirname(this.filePath),
+          `._tmp_${path.basename(this.filePath)}_${Date.now()}`
+        );
           
-          // 写入临时文件
-          fs.writeFileSync(tmpFile, content);
+        // 写入临时文件
+        fs.writeFileSync(tmpFile, content);
           
-          try {
-            // 清除缓存
-            if (require.cache[tmpFile]) {
-              delete require.cache[tmpFile];
-            }
-            
-            // 加载配置
-            const config = require(tmpFile);
-            
-            // 删除临时文件
-            fs.unlinkSync(tmpFile);
-            
-            return config;
-          } catch (err) {
-            // 删除临时文件
-            if (fs.existsSync(tmpFile)) {
-              fs.unlinkSync(tmpFile);
-            }
-            
-            throw err;
-          }
-        };
-        
-      case 'yaml':
-      case 'yml':
         try {
-          const yaml = require('js-yaml');
-          return content => yaml.load(content);
+          // 清除缓存
+          if (require.cache[tmpFile]) {
+            delete require.cache[tmpFile];
+          }
+            
+          // 加载配置
+          const config = require(tmpFile);
+            
+          // 删除临时文件
+          fs.unlinkSync(tmpFile);
+            
+          return config;
         } catch (err) {
-          logger.error('js-yaml 模块未安装，无法解析YAML文件');
-          return () => ({});
+          // 删除临时文件
+          if (fs.existsSync(tmpFile)) {
+            fs.unlinkSync(tmpFile);
+          }
+            
+          throw err;
         }
+      };
         
-      default:
-        return content => JSON.parse(content);
+    case 'yaml':
+    case 'yml':
+      try {
+        const yaml = require('js-yaml');
+        return content => yaml.load(content);
+      } catch (err) {
+        logger.error('js-yaml 模块未安装，无法解析YAML文件');
+        return () => ({});
+      }
+        
+    default:
+      return content => JSON.parse(content);
     }
   }
   

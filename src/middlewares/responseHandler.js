@@ -51,7 +51,7 @@ function responseHandler(options = {}) {
     };
     
     // 增加自定义状态响应函数
-    ctx.response.sendStatus = (statusCode) => {
+    ctx.response.sendStatus = statusCode => {
       ctx.status = statusCode;
       ctx.body = {
         [opts.format.code]: statusCode,

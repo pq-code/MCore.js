@@ -47,3 +47,16 @@ module.exports = {
   // 数据清理
   sanitizer
 }; 
+
+/**
+ * 创建安全密钥
+ * 
+ * @param {number} length - 密钥长度，默认为32
+ * @returns {string} 生成的安全密钥
+ */
+function generateSecretKey(length = 32) {
+  const crypto = require('crypto');
+  return crypto.randomBytes(length).toString('hex');
+}
+
+module.exports.generateSecretKey = generateSecretKey; 

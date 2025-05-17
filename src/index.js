@@ -69,6 +69,13 @@ const constants = require('./constants');
  * @returns {BaseApp} 应用实例
  */
 function createApp(options = {}) {
+  // 确认所有模块都已正确加载
+  if (!BaseApp || !router || !auth || !api || !db || !registry || !logger ||
+      !audit || !cache || !mq || !resilience || !config || !monitor ||
+      !security || !hooks || !middlewares || !utils || !constants) {
+    throw new Error('MCore.js 初始化失败：一个或多个模块加载失败');
+  }
+  
   return new BaseApp(options);
 }
 

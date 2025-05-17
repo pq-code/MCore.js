@@ -113,19 +113,19 @@ class ServiceDiscovery {
     
     // 根据负载均衡策略选择实例
     switch (this.loadBalanceStrategy) {
-      case LOAD_BALANCE_STRATEGY.RANDOM:
-        return this._selectRandom(instances);
+    case LOAD_BALANCE_STRATEGY.RANDOM:
+      return this._selectRandom(instances);
         
-      case LOAD_BALANCE_STRATEGY.ROUND_ROBIN:
-        return this._selectRoundRobin(instances, serviceName);
+    case LOAD_BALANCE_STRATEGY.ROUND_ROBIN:
+      return this._selectRoundRobin(instances, serviceName);
         
-      case LOAD_BALANCE_STRATEGY.IP_HASH:
-        return this._selectIPHash(instances, context.clientIP);
+    case LOAD_BALANCE_STRATEGY.IP_HASH:
+      return this._selectIPHash(instances, context.clientIP);
         
       // 其他策略暂时使用随机选择
-      default:
-        logger.warn(`不支持的负载均衡策略: ${this.loadBalanceStrategy}，将使用随机策略`);
-        return this._selectRandom(instances);
+    default:
+      logger.warn(`不支持的负载均衡策略: ${this.loadBalanceStrategy}，将使用随机策略`);
+      return this._selectRandom(instances);
     }
   }
   
@@ -207,10 +207,10 @@ class ServiceDiscovery {
         requestOptions.headers['Content-Type'] = 'application/json';
       }
       
-      const req = client.request(requestOptions, (res) => {
+      const req = client.request(requestOptions, res => {
         let data = '';
         
-        res.on('data', (chunk) => {
+        res.on('data', chunk => {
           data += chunk;
         });
         
@@ -237,7 +237,7 @@ class ServiceDiscovery {
       });
       
       // 错误处理
-      req.on('error', (err) => {
+      req.on('error', err => {
         reject(err);
       });
       

@@ -92,7 +92,7 @@ class ConsulProvider extends EventEmitter {
         await this._watchKey(key);
       }
       
-      logger.info(`已开始监听Consul配置变更`);
+      logger.info('已开始监听Consul配置变更');
       
       // 监听键变化
       this._watchKeys();
@@ -236,7 +236,7 @@ class ConsulProvider extends EventEmitter {
       this.watchers.set(key, watcher);
       
       // 处理变更
-      watcher.on('change', (data) => {
+      watcher.on('change', data => {
         try {
           // 计算配置键
           const configKey = this._keyToConfigKey(key);
@@ -264,7 +264,7 @@ class ConsulProvider extends EventEmitter {
       });
       
       // 处理错误
-      watcher.on('error', (err) => {
+      watcher.on('error', err => {
         logger.error(`Consul配置监听器错误: ${key}, ${err.message}`);
       });
     } catch (err) {
@@ -286,7 +286,7 @@ class ConsulProvider extends EventEmitter {
       });
       
       // 处理变更
-      watcher.on('change', async (keys) => {
+      watcher.on('change', async keys => {
         try {
           const currentKeys = Array.isArray(keys) ? keys : [];
           const watchedKeys = Array.from(this.watchers.keys());
@@ -327,7 +327,7 @@ class ConsulProvider extends EventEmitter {
       });
       
       // 处理错误
-      watcher.on('error', (err) => {
+      watcher.on('error', err => {
         logger.error(`Consul键列表监听器错误: ${err.message}`);
       });
     } catch (err) {

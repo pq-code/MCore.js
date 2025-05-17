@@ -75,8 +75,8 @@ class AuthorizationGuard {
   constructor(provider, options = {}) {
     this.provider = provider;
     this.options = {
-      subjectExtractor: (ctx) => ctx.state?.user || ctx.user,
-      resourceExtractor: (ctx) => ctx.params?.id ? { id: ctx.params.id } : null,
+      subjectExtractor: ctx => ctx.state?.user || ctx.user,
+      resourceExtractor: ctx => ctx.params?.id ? { id: ctx.params.id } : null,
       failureHandler: null,
       ...options
     };

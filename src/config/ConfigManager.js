@@ -29,7 +29,7 @@ class ConfigManager extends EventEmitter {
     this.refreshing = false;
     this.refreshInterval = options.refreshInterval || 60000; // 默认1分钟
     this.autoRefresh = options.autoRefresh !== false;
-    this.onError = options.onError || ((err) => logger.error(`配置加载错误: ${err.message}`, { stack: err.stack }));
+    this.onError = options.onError || (err => logger.error(`配置加载错误: ${err.message}`, { stack: err.stack }));
     
     // 添加环境变量提供者（最低优先级）
     this.addProvider(new EnvProvider());

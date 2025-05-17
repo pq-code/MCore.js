@@ -48,39 +48,39 @@ function hashPassword(password, options = {}) {
     
     // 根据算法生成哈希
     switch (config.algorithm.toLowerCase()) {
-      case 'pbkdf2':
-        hash = crypto.pbkdf2Sync(
-          password,
-          saltBuffer,
-          config.iterations,
-          config.keylen,
-          config.digest
-        );
-        params = `${config.iterations}:${config.keylen}:${config.digest}`;
-        break;
+    case 'pbkdf2':
+      hash = crypto.pbkdf2Sync(
+        password,
+        saltBuffer,
+        config.iterations,
+        config.keylen,
+        config.digest
+      );
+      params = `${config.iterations}:${config.keylen}:${config.digest}`;
+      break;
         
-      case 'scrypt':
-        // scrypt更安全但更消耗资源
-        const N = config.N || 16384; // CPU/内存开销
-        const r = config.r || 8;     // 块大小
-        const p = config.p || 1;     // 并行化因子
+    case 'scrypt':
+      // scrypt更安全但更消耗资源
+      const N = config.N || 16384; // CPU/内存开销
+      const r = config.r || 8;     // 块大小
+      const p = config.p || 1;     // 并行化因子
         
-        hash = crypto.scryptSync(
-          password,
-          saltBuffer,
-          config.keylen,
-          { N, r, p }
-        );
-        params = `${N}:${r}:${p}:${config.keylen}`;
-        break;
+      hash = crypto.scryptSync(
+        password,
+        saltBuffer,
+        config.keylen,
+        { N, r, p }
+      );
+      params = `${N}:${r}:${p}:${config.keylen}`;
+      break;
         
-      case 'argon2':
-        // 注意: Node.js核心不支持argon2，这里需要使用第三方库
-        logger.warn('Node.js核心不支持argon2算法，请使用第三方库如argon2');
-        throw new Error('不支持的算法：argon2，请使用pbkdf2或scrypt');
+    case 'argon2':
+      // 注意: Node.js核心不支持argon2，这里需要使用第三方库
+      logger.warn('Node.js核心不支持argon2算法，请使用第三方库如argon2');
+      throw new Error('不支持的算法：argon2，请使用pbkdf2或scrypt');
         
-      default:
-        throw new Error(`不支持的算法: ${config.algorithm}`);
+    default:
+      throw new Error(`不支持的算法: ${config.algorithm}`);
     }
     
     // 格式: 算法:参数:salt:hash
@@ -115,46 +115,46 @@ function verifyPassword(password, hashedPassword) {
     
     // 根据算法验证
     switch (algorithm) {
-      case 'pbkdf2':
-        params = parts[1].split(':');
-        if (params.length !== 3) {
-          throw new Error('无效的PBKDF2参数');
-        }
+    case 'pbkdf2':
+      params = parts[1].split(':');
+      if (params.length !== 3) {
+        throw new Error('无效的PBKDF2参数');
+      }
         
-        const iterations = parseInt(params[0], 10);
-        const keylen = parseInt(params[1], 10);
-        const digest = params[2];
+      const iterations = parseInt(params[0], 10);
+      const keylen = parseInt(params[1], 10);
+      const digest = params[2];
         
-        calculatedHash = crypto.pbkdf2Sync(
-          password,
-          salt,
-          iterations,
-          keylen,
-          digest
-        );
-        break;
+      calculatedHash = crypto.pbkdf2Sync(
+        password,
+        salt,
+        iterations,
+        keylen,
+        digest
+      );
+      break;
         
-      case 'scrypt':
-        params = parts[1].split(':');
-        if (params.length !== 4) {
-          throw new Error('无效的scrypt参数');
-        }
+    case 'scrypt':
+      params = parts[1].split(':');
+      if (params.length !== 4) {
+        throw new Error('无效的scrypt参数');
+      }
         
-        const N = parseInt(params[0], 10);
-        const r = parseInt(params[1], 10);
-        const p = parseInt(params[2], 10);
-        const scryptKeylen = parseInt(params[3], 10);
+      const N = parseInt(params[0], 10);
+      const r = parseInt(params[1], 10);
+      const p = parseInt(params[2], 10);
+      const scryptKeylen = parseInt(params[3], 10);
         
-        calculatedHash = crypto.scryptSync(
-          password,
-          salt,
-          scryptKeylen,
-          { N, r, p }
-        );
-        break;
+      calculatedHash = crypto.scryptSync(
+        password,
+        salt,
+        scryptKeylen,
+        { N, r, p }
+      );
+      break;
         
-      default:
-        throw new Error(`不支持的算法: ${algorithm}`);
+    default:
+      throw new Error(`不支持的算法: ${algorithm}`);
     }
     
     // 比较哈希值

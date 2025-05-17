@@ -292,7 +292,7 @@ class KafkaAdapter {
        * @param {Array<Object>} messages - 消息列表
        * @returns {Promise<Array>} 发送结果
        */
-      sendBatch: async (messages) => {
+      sendBatch: async messages => {
         // 确保连接可用
         if (!this.isConnected()) {
           await this.connect();
@@ -489,7 +489,7 @@ class KafkaAdapter {
        * @param {string} subscriptionId - 订阅ID
        * @returns {Promise<boolean>} 是否成功取消
        */
-      unsubscribe: async (subscriptionId) => {
+      unsubscribe: async subscriptionId => {
         if (!subscriptions.has(subscriptionId)) {
           return false;
         }
@@ -533,7 +533,7 @@ class KafkaAdapter {
        * @param {Object} message - 消息对象
        * @returns {Promise<void>}
        */
-      ack: async (message) => {
+      ack: async message => {
         if (options.autoCommit === false) {
           await consumer.commitOffsets([{
             topic: message.topic,

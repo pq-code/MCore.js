@@ -180,7 +180,7 @@ class LoggerFactory {
     
     // 添加辅助方法
     logger.getTransports = () => logger.transports;
-    logger.setLevel = (level) => {
+    logger.setLevel = level => {
       logger.level = level;
       logger.transports.forEach(t => {
         t.level = level;

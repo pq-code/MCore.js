@@ -36,7 +36,7 @@ module.exports = {
   // 快捷方法
   createConnection: (config, name) => defaultManager.createConnection(config, name),
   registerModel: (name, schema, connectionName) => defaultManager.registerModel(name, schema, connectionName),
-  getModel: (name) => defaultManager.getModel(name),
+  getModel: name => defaultManager.getModel(name),
   loadModels: (dir, connectionName) => defaultManager.loadModels(dir, connectionName),
   query: (sql, params, connectionName) => defaultManager.query(sql, params, connectionName),
   transaction: (callback, connectionName) => defaultManager.transaction(callback, connectionName)

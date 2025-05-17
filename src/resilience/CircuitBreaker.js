@@ -46,8 +46,8 @@ class CircuitBreaker extends EventEmitter {
     this.serviceFunction = typeof serviceFunction === 'function'
       ? serviceFunction
       : async (...args) => {
-          throw new Error(`服务函数未定义: ${this.serviceName}`);
-        };
+        throw new Error(`服务函数未定义: ${this.serviceName}`);
+      };
     
     // 默认配置
     this.options = {
@@ -197,7 +197,7 @@ class CircuitBreaker extends EventEmitter {
       cache: false,
       isPromise: true,
       isFunction: typeof this.serviceFunction === 'function',
-      healthCheck: undefined, // 自定义健康检查函数
+      healthCheck: undefined // 自定义健康检查函数
     });
   }
   
@@ -231,7 +231,7 @@ class CircuitBreaker extends EventEmitter {
       });
     });
     
-    this.circuit.on('timeout', (err) => {
+    this.circuit.on('timeout', err => {
       logger.warn(`熔断器超时: ${this.options.name}, ${err.message}`);
       this.emit('timeout', {
         name: this.options.name,
@@ -245,14 +245,14 @@ class CircuitBreaker extends EventEmitter {
       this.emit('reject', { name: this.options.name, timestamp: Date.now() });
     });
     
-    this.circuit.on('success', (result) => {
+    this.circuit.on('success', result => {
       if (this.getState() !== CIRCUIT_STATE.CLOSED) {
         logger.info(`熔断器成功调用: ${this.options.name}`);
       }
       this.emit('success', { name: this.options.name, timestamp: Date.now() });
     });
     
-    this.circuit.on('failure', (err) => {
+    this.circuit.on('failure', err => {
       logger.error(`熔断器调用失败: ${this.options.name}, ${err.message}`, {
         stack: err.stack,
         state: this.getState()

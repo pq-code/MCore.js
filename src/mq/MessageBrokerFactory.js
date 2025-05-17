@@ -35,15 +35,15 @@ class MessageBrokerFactory {
     const type = (options.type || process.env.MQ_TYPE || BROKER_TYPES.RABBITMQ).toLowerCase();
     
     switch (type) {
-      case BROKER_TYPES.RABBITMQ:
-        return new RabbitMQAdapter(options);
-      case BROKER_TYPES.KAFKA:
-        return new KafkaAdapter(options);
-      case BROKER_TYPES.NONE:
-        return MessageBrokerFactory.createNoneBroker();
-      default:
-        logger.warn(`未知的消息队列类型: ${type}，将使用RabbitMQ`);
-        return new RabbitMQAdapter(options);
+    case BROKER_TYPES.RABBITMQ:
+      return new RabbitMQAdapter(options);
+    case BROKER_TYPES.KAFKA:
+      return new KafkaAdapter(options);
+    case BROKER_TYPES.NONE:
+      return MessageBrokerFactory.createNoneBroker();
+    default:
+      logger.warn(`未知的消息队列类型: ${type}，将使用RabbitMQ`);
+      return new RabbitMQAdapter(options);
     }
   }
   

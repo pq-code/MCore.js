@@ -249,7 +249,7 @@ class AuditLogger {
   logApiAccess(data) {
     return this.log({
       type: AUDIT_EVENT_TYPES.API_ACCESS,
-      action: `API访问`,
+      action: 'API访问',
       ...data
     });
   }

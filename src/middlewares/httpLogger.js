@@ -157,7 +157,7 @@ function filterHeaders(headers) {
     'cookie',
     'set-cookie',
     'x-forwarded-for',
-    'x-real-ip',
+    'x-real-ip'
   ];
   
   sensitiveHeaders.forEach(header => {

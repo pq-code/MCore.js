@@ -45,7 +45,7 @@ class AuditMiddleware {
     const sensitiveFields = options.sensitiveFields || ['password', 'token', 'secret', 'key', 'credit_card', 'ssn'];
     
     // 获取用户信息的函数
-    const getUserInfo = options.getUserInfo || ((ctx) => {
+    const getUserInfo = options.getUserInfo || (ctx => {
       return {
         userId: ctx.state.user?.id,
         username: ctx.state.user?.username
@@ -58,7 +58,7 @@ class AuditMiddleware {
      * @param {string} path - 请求路径
      * @returns {boolean} 是否应该被审计
      */
-    const shouldAudit = (path) => {
+    const shouldAudit = path => {
       // 如果路径在排除列表中，不记录
       if (excludePaths.some(p => path.startsWith(p))) {
         return false;
@@ -78,7 +78,7 @@ class AuditMiddleware {
      * @param {Object} data - 数据对象
      * @returns {Object} 处理后的对象
      */
-    const maskSensitive = (data) => {
+    const maskSensitive = data => {
       if (!data || typeof data !== 'object') {
         return data;
       }
@@ -111,7 +111,7 @@ class AuditMiddleware {
      * @param {Object} headers - 请求头对象
      * @returns {Object} 过滤后的请求头
      */
-    const filterSensitiveHeaders = (headers) => {
+    const filterSensitiveHeaders = headers => {
       const filtered = { ...headers };
       
       for (const header of sensitiveHeaders) {
@@ -187,7 +187,7 @@ class AuditMiddleware {
         // 记录错误日志
         auditLogger.log({
           type: AUDIT_EVENT_TYPES.API_ERROR,
-          action: `API错误`,
+          action: 'API错误',
           userId,
           username,
           resourceType: 'API',

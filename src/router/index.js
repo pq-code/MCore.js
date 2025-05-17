@@ -110,7 +110,7 @@ function restful(router, path, controller, options = {}) {
   const defaultMiddleware = async (ctx, next) => await next();
   
   // 获取中间件
-  const getMiddleware = (action) => {
+  const getMiddleware = action => {
     return Array.isArray(middlewares[action]) 
       ? middlewares[action] 
       : (middlewares[action] ? [middlewares[action]] : [defaultMiddleware]);

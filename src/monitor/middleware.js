@@ -256,7 +256,7 @@ function createExpressHttpMetricsMiddleware(metricsCollector, options = {}) {
     const originalEnd = res.end;
     
     // 重写end方法
-    res.end = function(...args) {
+    res.end = function (...args) {
       // 调用原始end方法
       originalEnd.apply(res, args);
       

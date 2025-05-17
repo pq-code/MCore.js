@@ -120,20 +120,20 @@ class MetricsCollector extends EventEmitter {
     // 根据类型创建指标
     let metric;
     switch (type.toLowerCase()) {
-      case 'counter':
-        metric = new this.promClient.Counter(config);
-        break;
-      case 'gauge':
-        metric = new this.promClient.Gauge(config);
-        break;
-      case 'histogram':
-        metric = new this.promClient.Histogram(config);
-        break;
-      case 'summary':
-        metric = new this.promClient.Summary(config);
-        break;
-      default:
-        throw new Error(`不支持的指标类型: ${type}`);
+    case 'counter':
+      metric = new this.promClient.Counter(config);
+      break;
+    case 'gauge':
+      metric = new this.promClient.Gauge(config);
+      break;
+    case 'histogram':
+      metric = new this.promClient.Histogram(config);
+      break;
+    case 'summary':
+      metric = new this.promClient.Summary(config);
+      break;
+    default:
+      throw new Error(`不支持的指标类型: ${type}`);
     }
     
     // 保存指标
@@ -223,7 +223,7 @@ class MetricsCollector extends EventEmitter {
     this.promClient.collectDefaultMetrics({
       prefix: this.prefix,
       register: this.registry,
-      gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
+      gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5]
     });
     
     // 应用指标
@@ -364,7 +364,7 @@ class MetricsCollector extends EventEmitter {
     this.registerMetric('unhandled_rejections_total', 'counter', '未处理的Promise拒绝总数');
     
     // 监听未捕获的异常
-    process.on('uncaughtException', (err) => {
+    process.on('uncaughtException', err => {
       logger.error(`未捕获的异常: ${err.message}`, { stack: err.stack });
       
       const errorsMetric = this.getMetric('errors_total');
@@ -380,7 +380,7 @@ class MetricsCollector extends EventEmitter {
     });
     
     // 监听未处理的Promise拒绝
-    process.on('unhandledRejection', (reason) => {
+    process.on('unhandledRejection', reason => {
       const message = reason instanceof Error ? reason.message : String(reason);
       const stack = reason instanceof Error ? reason.stack : undefined;
       
@@ -486,7 +486,7 @@ class MetricsCollector extends EventEmitter {
       let totalIdle = 0;
       let totalTick = 0;
       
-      cpus.forEach((cpu) => {
+      cpus.forEach(cpu => {
         for (const type in cpu.times) {
           totalTick += cpu.times[type];
         }

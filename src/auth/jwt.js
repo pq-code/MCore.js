@@ -16,7 +16,7 @@ const logger = require('../utils/logger');
 function generateToken(payload, secret, options = {}) {
   try {
     const defaultOptions = {
-      expiresIn: '24h', // 默认过期时间为24小时
+      expiresIn: '24h' // 默认过期时间为24小时
     };
     
     const mergedOptions = { ...defaultOptions, ...options };

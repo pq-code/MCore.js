@@ -78,7 +78,7 @@ class RabbitMQAdapter {
       });
       
       // 处理连接错误
-      this.connection.on('error', (err) => {
+      this.connection.on('error', err => {
         logger.error(`RabbitMQ连接错误: ${err.message}`, {
           stack: err.stack
         });
@@ -307,7 +307,7 @@ class RabbitMQAdapter {
        * @param {Array<Object>} messages - 消息列表
        * @returns {Promise<Array>} 发送结果
        */
-      sendBatch: async (messages) => {
+      sendBatch: async messages => {
         // 确保连接可用
         if (!this.isConnected()) {
           await this.connect();
@@ -390,7 +390,7 @@ class RabbitMQAdapter {
         }
         
         // 消费回调
-        const onMessage = async (msg) => {
+        const onMessage = async msg => {
           if (!msg) return;
           
           try {
@@ -463,7 +463,7 @@ class RabbitMQAdapter {
        * @param {string} consumerTag - 消费者标签
        * @returns {Promise<boolean>} 是否成功取消
        */
-      unsubscribe: async (consumerTag) => {
+      unsubscribe: async consumerTag => {
         if (!this.isConnected() || !this.consumerTags.has(consumerTag)) {
           return false;
         }
@@ -487,7 +487,7 @@ class RabbitMQAdapter {
        * @param {Object} message - 消息对象
        * @returns {Promise<void>}
        */
-      ack: async (message) => {
+      ack: async message => {
         if (!this.isConnected()) {
           throw new Error('RabbitMQ连接已关闭');
         }
@@ -532,7 +532,7 @@ class RabbitMQAdapter {
        * @param {string} queue - 队列名称
        * @returns {Promise<Object>} 队列信息
        */
-      getQueueInfo: async (queue) => {
+      getQueueInfo: async queue => {
         if (!this.isConnected()) {
           await this.connect();
         }

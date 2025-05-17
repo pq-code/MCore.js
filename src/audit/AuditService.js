@@ -303,7 +303,7 @@ class AuditService {
       // 如果缓存太大，删除一些旧事件防止内存泄漏
       if (this.cache.length > this.storageConfig.cacheSize * 2) {
         this.cache = this.cache.slice(-this.storageConfig.cacheSize);
-        logger.warn(`审计日志缓存过大，删除旧事件`);
+        logger.warn('审计日志缓存过大，删除旧事件');
       }
     }
   }

@@ -7,7 +7,6 @@
 
 const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
-const cors = require('@koa/cors');
 const Router = require('@koa/router');
 const path = require('path');
 const fs = require('fs');
@@ -18,6 +17,7 @@ const db = require('../db');
 const { createHookManager } = require('../hooks');
 const { HOOK_NAMES, HEALTH_STATUS } = require('../constants');
 const responseHandler = require('../middlewares/responseHandler');
+const middlewares = require('../middlewares');
 
 class BaseApp {
   /**
@@ -125,13 +125,20 @@ class BaseApp {
    */
   _initMiddlewares() {
     // CORS中间件
-    this.app.use(cors(this.config.cors));
+    if (this.config.cors && this.config.cors.enabled !== false) {
+      this.app.use(middlewares.cors(this.config.cors));
+    }
+    
+    // 安全头中间件
+    if (this.config.helmet && this.config.helmet.enabled !== false) {
+      this.app.use(middlewares.helmet(this.config.helmet));
+    }
     
     // 请求体解析中间件
     this.app.use(bodyParser(this.config.bodyParser));
     
     // 统一响应格式中间件
-    this.app.use(responseHandler());
+    this.app.use(middlewares.responseHandler());
     
     // 请求日志中间件（排除健康检查）
     this.app.use(async (ctx, next) => {

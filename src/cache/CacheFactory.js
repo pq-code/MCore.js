@@ -35,15 +35,15 @@ class CacheFactory {
     const type = (options.type || process.env.CACHE_TYPE || CACHE_TYPES.MEMORY).toLowerCase();
     
     switch (type) {
-      case CACHE_TYPES.MEMORY:
-        return new MemoryCache(options);
-      case CACHE_TYPES.REDIS:
-        return new RedisCache(options);
-      case CACHE_TYPES.NONE:
-        return CacheFactory.createNoneCache();
-      default:
-        logger.warn(`未知的缓存类型: ${type}，将使用内存缓存`);
-        return new MemoryCache(options);
+    case CACHE_TYPES.MEMORY:
+      return new MemoryCache(options);
+    case CACHE_TYPES.REDIS:
+      return new RedisCache(options);
+    case CACHE_TYPES.NONE:
+      return CacheFactory.createNoneCache();
+    default:
+      logger.warn(`未知的缓存类型: ${type}，将使用内存缓存`);
+      return new MemoryCache(options);
     }
   }
   

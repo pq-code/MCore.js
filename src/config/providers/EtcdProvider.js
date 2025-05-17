@@ -95,7 +95,7 @@ class EtcdProvider extends EventEmitter {
         .create();
       
       // 处理变更
-      this.watcher.on('put', (kv) => {
+      this.watcher.on('put', kv => {
         try {
           // 计算配置键
           const configKey = this._keyToConfigKey(kv.key.toString());
@@ -119,7 +119,7 @@ class EtcdProvider extends EventEmitter {
       });
       
       // 处理删除
-      this.watcher.on('delete', (kv) => {
+      this.watcher.on('delete', kv => {
         try {
           // 计算配置键
           const configKey = this._keyToConfigKey(kv.key.toString());
@@ -138,7 +138,7 @@ class EtcdProvider extends EventEmitter {
       });
       
       // 处理错误
-      this.watcher.on('error', (err) => {
+      this.watcher.on('error', err => {
         logger.error(`Etcd配置监听器错误: ${err.message}`);
       });
       

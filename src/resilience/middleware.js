@@ -153,7 +153,7 @@ function expressCircuitBreaker(options = {}) {
           const originalEnd = res.end;
           
           // 重写end方法以在请求完成时解析Promise
-          res.end = function(...args) {
+          res.end = function (...args) {
             originalEnd.apply(res, args);
             resolve();
           };
@@ -224,7 +224,7 @@ function expressBulkhead(options = {}) {
           const originalEnd = res.end;
           
           // 重写end方法以在请求完成时解析Promise
-          res.end = function(...args) {
+          res.end = function (...args) {
             originalEnd.apply(res, args);
             resolve();
           };
@@ -291,13 +291,13 @@ function expressTimeout(options = {}) {
           const originalEnd = res.end;
           
           // 重写end方法以在请求完成时解析Promise
-          res.end = function(...args) {
+          res.end = function (...args) {
             originalEnd.apply(res, args);
             resolve();
           };
           
           // 处理错误情况
-          next((err) => {
+          next(err => {
             if (err) {
               reject(err);
             }

@@ -69,7 +69,7 @@ class ModelLoader {
       
       return models;
     } catch (err) {
-      logger.error(`扫描模型目录出错`, { directory, error: err.message, stack: err.stack });
+      logger.error('扫描模型目录出错', { directory, error: err.message, stack: err.stack });
       return [];
     }
   }

@@ -33,13 +33,13 @@ class RegistryFactory {
     const type = (options.type || process.env.REGISTRY_TYPE || REGISTRY_TYPES.CONSUL).toLowerCase();
     
     switch (type) {
-      case REGISTRY_TYPES.CONSUL:
-        return new ConsulRegistry(options);
-      case REGISTRY_TYPES.NONE:
-        return RegistryFactory.createNoneRegistry();
-      default:
-        logger.warn(`未知的注册中心类型: ${type}，将使用空注册`);
-        return RegistryFactory.createNoneRegistry();
+    case REGISTRY_TYPES.CONSUL:
+      return new ConsulRegistry(options);
+    case REGISTRY_TYPES.NONE:
+      return RegistryFactory.createNoneRegistry();
+    default:
+      logger.warn(`未知的注册中心类型: ${type}，将使用空注册`);
+      return RegistryFactory.createNoneRegistry();
     }
   }
   

@@ -50,29 +50,29 @@ function validateType(value, type) {
   }
   
   switch (type.toLowerCase()) {
-    case DATA_TYPES.STRING:
-      return typeof value === 'string';
-    case DATA_TYPES.NUMBER:
-      return typeof value === 'number' && !isNaN(value);
-    case DATA_TYPES.BOOLEAN:
-      return typeof value === 'boolean';
-    case DATA_TYPES.OBJECT:
-      return typeof value === 'object' && !Array.isArray(value) && value !== null;
-    case DATA_TYPES.ARRAY:
-      return Array.isArray(value);
-    case DATA_TYPES.DATE:
-      return value instanceof Date || !isNaN(Date.parse(value));
-    case DATA_TYPES.EMAIL:
-      return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    case DATA_TYPES.URL:
-      try {
-        new URL(value);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    default:
+  case DATA_TYPES.STRING:
+    return typeof value === 'string';
+  case DATA_TYPES.NUMBER:
+    return typeof value === 'number' && !isNaN(value);
+  case DATA_TYPES.BOOLEAN:
+    return typeof value === 'boolean';
+  case DATA_TYPES.OBJECT:
+    return typeof value === 'object' && !Array.isArray(value) && value !== null;
+  case DATA_TYPES.ARRAY:
+    return Array.isArray(value);
+  case DATA_TYPES.DATE:
+    return value instanceof Date || !isNaN(Date.parse(value));
+  case DATA_TYPES.EMAIL:
+    return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  case DATA_TYPES.URL:
+    try {
+      new URL(value);
+      return true;
+    } catch (e) {
       return false;
+    }
+  default:
+    return false;
   }
 }
 
@@ -197,24 +197,24 @@ function middleware(schema = {}, options = {}) {
     
     // 根据来源获取数据
     switch (source) {
-      case 'body':
-        dataToValidate = ctx.request.body;
-        break;
-      case 'query':
-        dataToValidate = ctx.query;
-        break;
-      case 'params':
-        dataToValidate = ctx.params;
-        break;
-      case 'all':
-        dataToValidate = {
-          ...ctx.query,
-          ...ctx.params,
-          ...ctx.request.body
-        };
-        break;
-      default:
-        dataToValidate = ctx.request.body;
+    case 'body':
+      dataToValidate = ctx.request.body;
+      break;
+    case 'query':
+      dataToValidate = ctx.query;
+      break;
+    case 'params':
+      dataToValidate = ctx.params;
+      break;
+    case 'all':
+      dataToValidate = {
+        ...ctx.query,
+        ...ctx.params,
+        ...ctx.request.body
+      };
+      break;
+    default:
+      dataToValidate = ctx.request.body;
     }
     
     // 执行验证

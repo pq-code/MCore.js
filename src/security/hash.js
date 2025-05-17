@@ -152,7 +152,7 @@ async function fileHash(filePath, algorithm = 'sha256', encoding = 'hex') {
       const hash = crypto.createHash(algorithm);
       const stream = fs.createReadStream(filePath);
       
-      stream.on('data', (data) => {
+      stream.on('data', data => {
         hash.update(data);
       });
       
@@ -160,7 +160,7 @@ async function fileHash(filePath, algorithm = 'sha256', encoding = 'hex') {
         resolve(hash.digest(encoding));
       });
       
-      stream.on('error', (error) => {
+      stream.on('error', error => {
         logger.error(`计算文件哈希失败: ${error.message}`, { stack: error.stack });
         reject(new Error(`计算文件哈希失败: ${error.message}`));
       });

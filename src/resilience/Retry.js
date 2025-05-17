@@ -135,24 +135,24 @@ class Retry {
     let delay = 0;
     
     switch (this.options.strategy) {
-      case RETRY_STRATEGIES.FIXED:
-        delay = this.options.initialDelay;
-        break;
+    case RETRY_STRATEGIES.FIXED:
+      delay = this.options.initialDelay;
+      break;
         
-      case RETRY_STRATEGIES.EXPONENTIAL:
-        delay = this.options.initialDelay * Math.pow(this.options.factor, attempt - 1);
-        break;
+    case RETRY_STRATEGIES.EXPONENTIAL:
+      delay = this.options.initialDelay * Math.pow(this.options.factor, attempt - 1);
+      break;
         
-      case RETRY_STRATEGIES.FIBONACCI:
-        delay = this._getFibonacciNumber(attempt) * this.options.initialDelay;
-        break;
+    case RETRY_STRATEGIES.FIBONACCI:
+      delay = this._getFibonacciNumber(attempt) * this.options.initialDelay;
+      break;
         
-      case RETRY_STRATEGIES.RANDOM:
-        delay = Math.random() * this.options.initialDelay * attempt;
-        break;
+    case RETRY_STRATEGIES.RANDOM:
+      delay = Math.random() * this.options.initialDelay * attempt;
+      break;
         
-      default:
-        delay = this.options.initialDelay;
+    default:
+      delay = this.options.initialDelay;
     }
     
     // 应用抖动

@@ -51,7 +51,7 @@ class DatabaseManager {
         this.defaultConnection = name;
       }
       
-      logger.info(`数据库连接创建成功`, {
+      logger.info('数据库连接创建成功', {
         dialect: config.dialect,
         name,
         host: config.host,
@@ -60,7 +60,7 @@ class DatabaseManager {
       
       return adapter;
     } catch (err) {
-      logger.error(`数据库连接创建失败`, {
+      logger.error('数据库连接创建失败', {
         error: err.message,
         dialect: config.dialect,
         name,

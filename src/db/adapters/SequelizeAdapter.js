@@ -44,7 +44,7 @@ class SequelizeAdapter extends BaseAdapter {
           idle: 10000
         },
         logging: this.config.logging === true 
-          ? (msg) => logger.debug(msg) 
+          ? msg => logger.debug(msg) 
           : false,
         dialectOptions: this.config.dialectOptions || {},
         ...this.config.options
@@ -169,7 +169,7 @@ class SequelizeAdapter extends BaseAdapter {
     try {
       return await this.sequelize.transaction(callback);
     } catch (err) {
-      logger.error(`事务执行失败`, { error: err.message });
+      logger.error('事务执行失败', { error: err.message });
       throw err;
     }
   }
@@ -187,9 +187,9 @@ class SequelizeAdapter extends BaseAdapter {
     
     try {
       await this.sequelize.sync(options);
-      logger.info(`数据库同步完成`, { force: options.force === true });
+      logger.info('数据库同步完成', { force: options.force === true });
     } catch (err) {
-      logger.error(`数据库同步失败`, { error: err.message });
+      logger.error('数据库同步失败', { error: err.message });
       throw err;
     }
   }
@@ -306,25 +306,25 @@ class SequelizeAdapter extends BaseAdapter {
         
         // 设置关联关系
         switch (relationType.toLowerCase()) {
-          case 'hasone':
-            model.hasOne(targetModel, relation.options);
-            break;
-          case 'belongsto':
-            model.belongsTo(targetModel, relation.options);
-            break;
-          case 'hasmany':
-            model.hasMany(targetModel, relation.options);
-            break;
-          case 'belongstomany':
-            const through = relation.through;
-            if (!through) {
-              logger.warn(`belongsToMany关联需要指定through选项`);
-              continue;
-            }
-            model.belongsToMany(targetModel, { through, ...relation.options });
-            break;
-          default:
-            logger.warn(`未知的关联类型: ${relationType}`);
+        case 'hasone':
+          model.hasOne(targetModel, relation.options);
+          break;
+        case 'belongsto':
+          model.belongsTo(targetModel, relation.options);
+          break;
+        case 'hasmany':
+          model.hasMany(targetModel, relation.options);
+          break;
+        case 'belongstomany':
+          const through = relation.through;
+          if (!through) {
+            logger.warn('belongsToMany关联需要指定through选项');
+            continue;
+          }
+          model.belongsToMany(targetModel, { through, ...relation.options });
+          break;
+        default:
+          logger.warn(`未知的关联类型: ${relationType}`);
         }
       }
     }

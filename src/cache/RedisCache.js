@@ -52,7 +52,7 @@ class RedisCache {
         password: this.config.password || undefined,
         db: this.config.db,
         keyPrefix: this.config.keyPrefix,
-        retryStrategy: (times) => {
+        retryStrategy: times => {
           const delay = Math.min(times * 100, 3000);
           return delay;
         }
@@ -62,7 +62,7 @@ class RedisCache {
         logger.info(`Redis缓存已连接: ${this.config.host}:${this.config.port} db=${this.config.db}`);
       });
       
-      this.redis.on('error', (err) => {
+      this.redis.on('error', err => {
         logger.error(`Redis缓存错误: ${err.message}`, {
           stack: err.stack
         });

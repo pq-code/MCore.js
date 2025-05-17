@@ -55,7 +55,7 @@ const COMMON = {
   RULE_VALIDATION_FAIL: '17000',      // 规则验证失败
   OPERATION_FORBIDDEN: '17001',       // 操作禁止
   OPERATION_UNSUPPORTED: '17002',     // 操作不支持
-  STATUS_INVALID: '17003',            // 状态无效
+  STATUS_INVALID: '17003'            // 状态无效
 };
 
 // 认证服务错误 (20000-29999)
@@ -69,7 +69,7 @@ const AUTH = {
   
   // 授权错误 (21000-21999)
   AUTH_INSUFFICIENT_PERMISSIONS: '21000', // 权限不足
-  AUTH_ROLE_NOT_FOUND: '21001',       // 角色不存在
+  AUTH_ROLE_NOT_FOUND: '21001'       // 角色不存在
 };
 
 // 业务服务错误 (30000-39999)
@@ -77,14 +77,14 @@ const BUSINESS = {
   // 业务服务通用错误 (30000-30999)
   BUSINESS_VALIDATION_FAIL: '30000',  // 业务验证失败
   BUSINESS_PROCESS_FAIL: '30001',     // 业务处理失败
-  BUSINESS_STATE_INVALID: '30002',    // 业务状态无效
+  BUSINESS_STATE_INVALID: '30002'    // 业务状态无效
 };
 
 // BFF服务错误 (40000-49999)
 const BFF = {
   // BFF服务通用错误 (40000-40999)
   BFF_UPSTREAM_ERROR: '40000',        // 上游服务错误
-  BFF_DATA_TRANSFORM_ERROR: '40001',  // 数据转换错误
+  BFF_DATA_TRANSFORM_ERROR: '40001'  // 数据转换错误
 };
 
 // 低代码平台错误 (50000-59999)
@@ -92,7 +92,7 @@ const LOWCODE = {
   // 低代码平台通用错误 (50000-50999)
   LOWCODE_COMPILE_ERROR: '50000',     // 编译错误
   LOWCODE_RENDER_ERROR: '50001',      // 渲染错误
-  LOWCODE_TEMPLATE_ERROR: '50002',    // 模板错误
+  LOWCODE_TEMPLATE_ERROR: '50002'    // 模板错误
 };
 
 // AI服务错误 (60000-69999)
@@ -101,7 +101,7 @@ const AI = {
   AI_MODEL_ERROR: '60000',            // 模型错误
   AI_INFERENCE_ERROR: '60001',        // 推理错误
   AI_TRAINING_ERROR: '60002',         // 训练错误
-  AI_DATA_ERROR: '60003',             // 数据错误
+  AI_DATA_ERROR: '60003'             // 数据错误
 };
 
 module.exports = {
