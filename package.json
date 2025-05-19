@@ -1,6 +1,6 @@
 {
   "name": "mcore.js",
-  "version": "1.0.5",
+  "version": "1.0.9",
   "description": "MCore.js - 轻量级微服务基础框架",
   "main": "dist/index.js",
   "files": [

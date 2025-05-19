@@ -1,328 +1,220 @@
 /**
  * 基础应用类
- * 提供微服务的基础功能
+ * 提供应用的核心功能和生命周期管理
  * 
  * @class BaseApp
  */
 
 const Koa = require('koa');
-const bodyParser = require('koa-bodyparser');
 const Router = require('@koa/router');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-
-const logger = require('../logging');
-const db = require('../db');
-const { createHookManager } = require('../hooks');
-const { HOOK_NAMES, HEALTH_STATUS } = require('../constants');
-const responseHandler = require('../middlewares/responseHandler');
-const middlewares = require('../middlewares');
+const { HOOK_NAMES } = require('../constants');
+const hooks = require('../hooks');
+const Logger = require('../logging/Logger');
+const MiddlewareManager = require('../middlewares/MiddlewareManager');
+const LifecycleManager = require('./LifecycleManager');
 
 class BaseApp {
   /**
-   * 创建基础应用实例
+   * 创建应用实例
    * 
-   * @param {Object} options - 配置选项
-   * @param {string} options.serviceName - 服务名称
-   * @param {number} options.port - 服务端口
-   * @param {string} options.version - 服务版本
-   * @param {Object} options.registry - 服务注册配置
-   * @param {Object} options.logger - 日志配置
-   * @param {Object} options.db - 数据库配置
-   * @param {Object} options.auth - 认证配置
+   * @param {Object} options - 应用配置选项
+   * @param {string} options.name - 应用名称
+   * @param {number} options.port - 应用端口
    */
   constructor(options = {}) {
-    // 服务基本信息
-    this.serviceName = options.serviceName || process.env.SERVICE_NAME || 'microservice';
-    this.port = options.port || parseInt(process.env.PORT || '3000', 10);
-    this.version = options.version || process.env.SERVICE_VERSION || '1.0.0';
-    this.environment = process.env.NODE_ENV || 'development';
+    this.options = {
+      name: options.name || 'mcore-app',
+      port: options.port || 3000
+    };
     
-    // 创建应用实例
+    // 核心组件
     this.app = new Koa();
+    this.hooks = hooks.createHookSystem();
+    this.logger = new Logger(this.options.name);
+    this.publicRouter = new Router();
+    this.protectedRouter = new Router();
     
-    // 公共路由和受保护路由
-    this.publicRouter = new Router({ prefix: '/api/v1' });
-    this.protectedRouter = new Router({ prefix: '/api/v1' });
-    
-    // 钩子系统
-    this.hooks = createHookManager();
-    
-    // 日志系统
-    this.logger = options.logger
-      ? logger.createLoggerFactory(options.logger).createLogger(this.serviceName)
-      : logger.createLoggerFactory({ level: process.env.LOG_LEVEL }).createLogger(this.serviceName);
-    
-    // 数据库管理器
-    this.db = db.manager;
-    
-    // 数据库配置
-    this.dbConfig = options.db;
-    
-    // 健康状态
-    this.healthStatus = HEALTH_STATUS.UP;
-    
-    // 服务状态
-    this.status = {
-      startTime: null,
-      uptime: 0,
-      totalRequests: 0,
-      activeRequests: 0,
-      errors: 0
+    // 应用配置
+    this.config = {
+      ...this.options,
+      middleware: options.middleware || {},
+      lifecycle: options.lifecycle || {}
     };
     
-    // 初始化配置
-    this.config = this._loadConfig(options);
-    
-    // 初始化中间件
-    this._initMiddlewares();
-    
-    // 注册健康检查路由
-    this._registerHealthCheck();
-    
-    // 全局错误处理
-    this._registerErrorHandlers();
+    // 初始化应用
+    this._initialize();
   }
   
   /**
-   * 加载配置
-   * 
-   * @private
-   * @param {Object} options - 配置选项
-   * @returns {Object} 配置对象
-   */
-  _loadConfig(options = {}) {
-    // 默认配置
-    const defaultConfig = {
-      cors: {
-        origin: '*',
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
-      },
-      bodyParser: {
-        enableTypes: ['json', 'form'],
-        jsonLimit: '1mb',
-        strict: true,
-        onerror: (err, ctx) => {
-          ctx.throw(422, `请求体解析错误: ${err.message}`);
-        }
-      },
-      requestId: {
-        header: 'X-Request-ID',
-        generator: () => uuidv4()
-      }
-    };
-    
-    // 合并配置
-    return Object.assign({}, defaultConfig, options);
-  }
-  
-  /**
-   * 初始化中间件
+   * 初始化应用
    * 
    * @private
    */
-  _initMiddlewares() {
-    // CORS中间件
-    if (this.config.cors && this.config.cors.enabled !== false) {
-      this.app.use(middlewares.cors(this.config.cors));
-    }
+  _initialize() {
+    // 设置应用上下文
+    this.app.context.appName = this.options.name;
+    this.app.context.logger = this.logger;
     
-    // 安全头中间件
-    if (this.config.helmet && this.config.helmet.enabled !== false) {
-      this.app.use(middlewares.helmet(this.config.helmet));
-    }
+    // 注册钩子
+    this._registerHooks();
     
-    // 请求体解析中间件
-    this.app.use(bodyParser(this.config.bodyParser));
+    // 初始化中间件管理器
+    this.middlewareManager = new MiddlewareManager(this, this.config.middleware);
     
-    // 统一响应格式中间件
-    this.app.use(middlewares.responseHandler());
+    // 初始化生命周期管理器
+    this.lifecycleManager = new LifecycleManager(this, this.config.lifecycle);
     
-    // 请求日志中间件（排除健康检查）
-    this.app.use(async (ctx, next) => {
-      // 健康检查接口不记录日志
-      if (ctx.path === '/api/v1/health') {
-        return await next();
-      }
-      
-      const start = Date.now();
-      try {
-        await next();
-        const ms = Date.now() - start;
-        this.logger.info(`${ctx.method} ${ctx.url} - ${ms}ms`, {
-          requestId: ctx.state.requestId || 'unknown'
-        });
-      } catch (err) {
-        const ms = Date.now() - start;
-        this.logger.error(`${ctx.method} ${ctx.url} - ${ms}ms - Error: ${err.message}`, {
-          requestId: ctx.state.requestId || 'unknown',
-          error: err.stack
-        });
-        throw err; // 继续抛出错误，让响应处理中间件处理
-      }
-    });
-    
-    // 将数据库对象添加到上下文
-    this.app.use(async (ctx, next) => {
-      ctx.db = this.db;
-      await next();
-    });
+    // 配置基础中间件
+    this._configureMiddleware();
   }
   
   /**
-   * 注册健康检查路由
+   * 注册应用钩子
    * 
    * @private
    */
-  _registerHealthCheck() {
-    this.publicRouter.get('/health', async (ctx) => {
-      const health = {
-        status: this.healthStatus,
-        service: this.serviceName,
-        version: this.version,
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: this.environment,
-        details: {
-          memory: process.memoryUsage(),
-          requests: {
-            total: this.status.totalRequests,
-            active: this.status.activeRequests
-          }
-        }
-      };
-      
-      // 添加数据库状态
-      if (this.db.connections.size > 0) {
-        health.details.database = {
-          connected: true,
-          connections: Array.from(this.db.connections.keys())
-        };
-      }
-      
-      // 运行钩子以允许添加更多健康检查细节
-      const hookContext = await this.hooks.execute(HOOK_NAMES.BEFORE_RESPONSE, { health });
-      
-      ctx.body = hookContext.error ? health : hookContext.result.health;
+  _registerHooks() {
+    // 内置钩子
+    const builtinHookNames = Object.values(HOOK_NAMES);
+    builtinHookNames.forEach(hookName => {
+      this.hooks.register(hookName);
     });
   }
   
   /**
-   * 注册全局错误处理
+   * 配置基础中间件
    * 
    * @private
    */
-  _registerErrorHandlers() {
-    // Koa错误事件
-    this.app.on('error', (err, ctx) => {
-      this.logger.error(`服务错误`, {
-        error: err.message,
-        stack: err.stack,
-        url: ctx ? ctx.url : '',
-        method: ctx ? ctx.method : '',
-        requestId: ctx ? ctx.state.requestId : ''
-      });
-      
-      // 执行错误钩子
-      this.hooks.execute(HOOK_NAMES.ON_ERROR, { error: err, ctx })
-        .catch(hookErr => {
-          this.logger.error(`执行错误钩子失败`, { error: hookErr.message });
-        });
-    });
-    
-    // 进程异常
-    process.on('uncaughtException', (err) => {
-      this.logger.error(`未捕获的异常`, {
-        error: err.message,
-        stack: err.stack
-      });
-      
-      // 执行错误钩子
-      this.hooks.execute(HOOK_NAMES.ON_ERROR, { error: err })
-        .catch(hookErr => {
-          this.logger.error(`执行错误钩子失败`, { error: hookErr.message });
-        });
-    });
-    
-    process.on('unhandledRejection', (reason, promise) => {
-      this.logger.error(`未处理的Promise拒绝`, {
-        error: reason instanceof Error ? reason.message : reason,
-        stack: reason instanceof Error ? reason.stack : undefined
-      });
-      
-      // 执行错误钩子
-      this.hooks.execute(HOOK_NAMES.ON_ERROR, { error: reason instanceof Error ? reason : new Error(String(reason)) })
-        .catch(hookErr => {
-          this.logger.error(`执行错误钩子失败`, { error: hookErr.message });
-        });
-    });
+  _configureMiddleware() {
+    // 应用所有启用的中间件
+    this.middlewareManager.apply();
   }
   
   /**
-   * 初始化数据库连接
+   * 配置中间件
    * 
-   * @param {Object} config - 数据库配置，如果未提供则使用构造函数传入的配置
-   * @returns {Promise<void>}
+   * @public
+   * @param {string} name - 中间件名称
+   * @param {Object} config - 中间件配置
+   * @returns {BaseApp} 当前实例，支持链式调用
    */
-  async initDatabase(config = null) {
-    const dbConfig = config || this.dbConfig;
-    
-    if (!dbConfig) {
-      this.logger.debug('没有提供数据库配置，跳过数据库初始化');
-      return;
-    }
-    
-    try {
-      this.logger.info('正在初始化数据库连接');
-      
-      // 执行数据库连接前钩子
-      const beforeConnectHook = await this.hooks.execute(HOOK_NAMES.BEFORE_CONNECT, { config: dbConfig });
-      if (beforeConnectHook.error) {
-        throw beforeConnectHook.error;
-      }
-      
-      // 如果钩子修改了配置，使用修改后的配置
-      const finalConfig = beforeConnectHook.result ? beforeConnectHook.result.config : dbConfig;
-      
-      // 创建连接
-      const connection = await db.createConnection(finalConfig);
-      
-      // 执行数据库连接后钩子
-      await this.hooks.execute(HOOK_NAMES.AFTER_CONNECT, { connection });
-      
-      // 如果配置了模型目录，自动加载模型
-      if (finalConfig.modelsDir) {
-        this.logger.info(`正在加载模型目录: ${finalConfig.modelsDir}`);
-        await db.loadModels(finalConfig.modelsDir);
-      }
-      
-      // 自动同步模型到数据库
-      if (finalConfig.sync) {
-        const syncOptions = typeof finalConfig.sync === 'object' ? finalConfig.sync : {};
-        this.logger.info('正在同步数据库模型', syncOptions);
-        await connection.sync(syncOptions);
-      }
-      
-      this.logger.info('数据库初始化完成');
-      
-      return connection;
-    } catch (err) {
-      this.logger.error('数据库初始化失败', { error: err.message, stack: err.stack });
-      
-      // 如果配置了必要选项，重新抛出错误
-      if (dbConfig.required !== false) {
-        throw err;
-      }
-    }
+  configureMiddleware(name, config) {
+    this.middlewareManager.configure(name, config);
+    return this;
   }
   
   /**
-   * 注册所有路由
+   * 启用中间件
+   * 
+   * @public
+   * @param {string} name - 中间件名称
+   * @returns {BaseApp} 当前实例，支持链式调用
+   */
+  enableMiddleware(name) {
+    this.middlewareManager.enable(name);
+    return this;
+  }
+  
+  /**
+   * 禁用中间件
+   * 
+   * @public
+   * @param {string} name - 中间件名称
+   * @returns {BaseApp} 当前实例，支持链式调用
+   */
+  disableMiddleware(name) {
+    this.middlewareManager.disable(name);
+    return this;
+  }
+  
+  /**
+   * 注册自定义中间件
+   * 
+   * @public
+   * @param {string} name - 中间件名称
+   * @param {Object} middleware - 中间件定义
+   * @returns {BaseApp} 当前实例，支持链式调用
+   */
+  registerMiddleware(name, middleware) {
+    this.middlewareManager.register(name, middleware);
+    return this;
+  }
+  
+  /**
+   * 注册中间件
+   * 
+   * @public
+   * @param {Function} middleware - 中间件函数
+   * @returns {BaseApp} 当前实例，支持链式调用
+   */
+  use(middleware) {
+    this.app.use(middleware);
+    return this;
+  }
+  
+  /**
+   * 注册路由
+   * 
+   * @public
+   * @param {Router} router - 路由实例
+   * @returns {BaseApp} 当前实例，支持链式调用
+   */
+  useRouter(router) {
+    this.app.use(router.routes());
+    this.app.use(router.allowedMethods());
+    return this;
+  }
+  
+  /**
+   * 配置应用
+   * 
+   * @public
+   * @param {string} key - 配置键
+   * @param {*} value - 配置值
+   * @returns {BaseApp} 当前实例，支持链式调用
+   */
+  configure(key, value) {
+    if (typeof key === 'object') {
+      this.config = { ...this.config, ...key };
+    } else {
+      this.config[key] = value;
+    }
+    
+    return this;
+  }
+  
+  /**
+   * 获取配置
+   * 
+   * @public
+   * @param {string} key - 配置键
+   * @param {*} defaultValue - 默认值
+   * @returns {*} 配置值
+   */
+  getConfig(key, defaultValue) {
+    return this.config[key] !== undefined ? this.config[key] : defaultValue;
+  }
+  
+  /**
+   * 注册钩子处理函数
+   * 
+   * @public
+   * @param {string} hookName - 钩子名称
+   * @param {Function} handler - 处理函数
+   * @returns {BaseApp} 当前实例，支持链式调用
+   */
+  on(hookName, handler) {
+    this.hooks.on(hookName, handler);
+    return this;
+  }
+  
+  /**
+   * 注册路由
    * 
    * @param {Function} routeRegistrar - 路由注册函数
-   * @returns {BaseApp} 当前应用实例
    */
   registerRoutes(routeRegistrar) {
     // 执行路由注册前钩子
@@ -359,12 +251,22 @@ class BaseApp {
   }
   
   /**
-   * 自动加载路由
+   * 从目录加载路由
    * 
    * @param {string} dir - 路由目录
-   * @returns {BaseApp} 当前应用实例
+   * @param {Object} options - 加载选项
+   * @param {boolean} options.recursive - 是否递归加载子目录
+   * @param {string[]} options.fileExtensions - 要加载的文件扩展名
+   * @param {string[]} options.excludePatterns - 要排除的文件模式
+   * @returns {BaseApp} 当前实例，支持链式调用
    */
-  loadRoutes(dir) {
+  loadRoutes(dir, options = {}) {
+    const {
+      recursive = false,
+      fileExtensions = ['.js'],
+      excludePatterns = []
+    } = options;
+    
     const routesDir = path.resolve(process.cwd(), dir);
     
     if (!fs.existsSync(routesDir)) {
@@ -374,167 +276,133 @@ class BaseApp {
     
     this.logger.info(`加载路由目录: ${routesDir}`);
     
-    try {
-      // 读取目录下的所有文件
-      const files = fs.readdirSync(routesDir);
+    /**
+     * 加载单个路由文件
+     * @param {string} filePath - 文件路径
+     */
+    const loadRouteFile = (filePath) => {
+      try {
+        const router = require(filePath);
+        
+        // 支持函数式路由定义
+        if (typeof router === 'function') {
+          router(this.app, this);
+          this.logger.debug(`已加载路由文件: ${filePath}`);
+        }
+        // 支持对象式路由定义
+        else if (typeof router === 'object') {
+          this._registerObjectRoutes(router, filePath);
+        }
+      } catch (err) {
+        this.logger.error(`加载路由文件失败: ${filePath}`, { error: err.message });
+      }
+    };
+    
+    /**
+     * 处理目录
+     * @param {string} dirPath - 目录路径
+     */
+    const processDirectory = (dirPath) => {
+      const files = fs.readdirSync(dirPath);
       
-      // 遍历文件
       for (const file of files) {
-        if (file.endsWith('.js')) {
-          const routePath = path.join(routesDir, file);
-          const router = require(routePath);
-          
-          // 注册路由
-          if (typeof router === 'function') {
-            router(this.app, this);
-            this.logger.debug(`已加载路由文件: ${file}`);
+        const fullPath = path.join(dirPath, file);
+        const stat = fs.statSync(fullPath);
+        
+        if (stat.isDirectory() && recursive) {
+          processDirectory(fullPath);
+        } else if (stat.isFile()) {
+          const ext = path.extname(file);
+          if (fileExtensions.includes(ext) && 
+              !excludePatterns.some(pattern => pattern.test(file))) {
+            loadRouteFile(fullPath);
           }
         }
       }
-    } catch (err) {
-      this.logger.error(`加载路由失败`, { error: err.message, stack: err.stack });
-    }
+    };
     
+    processDirectory(routesDir);
     return this;
+  }
+  
+  /**
+   * 注册对象式路由定义
+   * @private
+   * @param {Object} router - 路由对象
+   * @param {string} filePath - 文件路径
+   */
+  _registerObjectRoutes(router, filePath) {
+    const {
+      prefix = '',
+      middlewares = [],
+      routes = {}
+    } = router;
+    
+    // 创建路由实例
+    const routeInstance = new Router({ prefix });
+    
+    // 注册中间件
+    middlewares.forEach(middleware => {
+      routeInstance.use(middleware);
+    });
+    
+    // 注册路由
+    Object.entries(routes).forEach(([path, handlers]) => {
+      Object.entries(handlers).forEach(([method, handler]) => {
+        if (typeof handler === 'function') {
+          routeInstance[method.toLowerCase()](path, handler);
+        } else if (Array.isArray(handler)) {
+          // 支持中间件数组
+          routeInstance[method.toLowerCase()](path, ...handler);
+        }
+      });
+    });
+    
+    // 应用路由
+    this.app.use(routeInstance.routes());
+    this.app.use(routeInstance.allowedMethods());
+    
+    this.logger.debug(`已加载对象式路由: ${filePath}`);
   }
   
   /**
    * 启动应用
    * 
-   * @returns {Promise<BaseApp>} 应用实例
+   * @public
+   * @returns {Promise<void>}
    */
   async start() {
-    try {
-      // 执行启动前钩子
-      const beforeStartHook = await this.hooks.execute(HOOK_NAMES.BEFORE_START, { app: this });
-      
-      if (beforeStartHook.error) {
-        throw beforeStartHook.error;
-      }
-      
-      // 初始化数据库连接（如果配置了）
-      if (this.dbConfig) {
-        await this.initDatabase();
-      }
-      
-      // 启动HTTP服务
-      return new Promise((resolve, reject) => {
-        try {
-          this.server = this.app.listen(this.port, () => {
-            // 记录状态
-            this.status.startTime = Date.now();
-            
-            this.logger.info(`服务已启动`, {
-              service: this.serviceName,
-              port: this.port,
-              environment: this.environment,
-              version: this.version
-            });
-            
-            // 执行启动后钩子
-            this.hooks.execute(HOOK_NAMES.AFTER_START, { app: this })
-              .catch(err => {
-                this.logger.error(`执行启动后钩子失败`, { error: err.message });
-              });
-            
-            // 优雅关闭处理
-            this._registerShutdownHandlers();
-            
-            resolve(this);
-          });
-          
-          this.server.on('error', (err) => {
-            reject(err);
-          });
-        } catch (err) {
-          reject(err);
-        }
-      });
-    } catch (err) {
-      this.logger.error(`启动服务失败`, { error: err.message, stack: err.stack });
-      throw err;
-    }
+    return this.lifecycleManager.start();
   }
   
   /**
-   * 注册关闭处理程序
+   * 停止应用
    * 
-   * @private
+   * @public
+   * @returns {Promise<void>}
    */
-  _registerShutdownHandlers() {
-    const shutdown = async () => {
-      try {
-        this.logger.info(`正在关闭服务...`, { service: this.serviceName });
-        
-        // 设置健康状态为DOWN，快速失败新请求
-        this.healthStatus = HEALTH_STATUS.DOWN;
-        
-        // 执行关闭前钩子
-        await this.hooks.execute(HOOK_NAMES.BEFORE_SHUTDOWN, { app: this });
-        
-        // 关闭数据库连接
-        await this.db.closeAll();
-        
-        // 关闭HTTP服务器
-        if (this.server) {
-          this.server.close();
-        }
-        
-        // 关闭日志等资源
-        logger.factory.close();
-        
-        this.logger.info(`服务已关闭`, { service: this.serviceName });
-        
-        // 延迟退出，确保日志被写入
-        setTimeout(() => {
-          process.exit(0);
-        }, 500);
-      } catch (err) {
-        this.logger.error(`关闭服务出错`, { error: err.message, stack: err.stack });
-        process.exit(1);
-      }
-    };
-    
-    // 注册信号处理程序
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
+  async stop() {
+    return this.lifecycleManager.stop();
   }
   
   /**
-   * 注册钩子
+   * 重启应用
    * 
-   * @param {string} name - 钩子名称
-   * @param {Function} handler - 钩子处理函数
-   * @param {Object} options - 钩子选项
-   * @returns {string} 处理器ID
+   * @public
+   * @returns {Promise<void>}
    */
-  hook(name, handler, options = {}) {
-    return this.hooks.register(name, handler, options);
+  async restart() {
+    return this.lifecycleManager.restart();
   }
   
   /**
-   * 执行钩子
+   * 获取应用状态
    * 
-   * @param {string} name - 钩子名称
-   * @param {Object} data - 上下文数据
-   * @param {Object} options - 执行选项
-   * @returns {Promise<Object>} 钩子上下文
+   * @public
+   * @returns {Object} 应用状态信息
    */
-  async executeHook(name, data = {}, options = {}) {
-    return this.hooks.execute(name, data, options);
-  }
-  
-  /**
-   * 注册新的钩子点
-   * 
-   * @param {string} name - 钩子名称
-   * @returns {BaseApp} 当前应用实例
-   */
-  registerHook(name) {
-    if (!this.hooks.has(name)) {
-      this.logger.debug(`注册新钩子点: ${name}`);
-    }
-    return this;
+  getStatus() {
+    return this.lifecycleManager.getStatus();
   }
 }
 

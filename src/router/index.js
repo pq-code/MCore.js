@@ -2,6 +2,12 @@
  * 路由模块
  * 提供路由管理、注册和辅助功能
  * 
+ * 设计理念:
+ * 1. 渐进式采用: 支持从简单的单路由到自动扫描的多种使用方式
+ * 2. 原生兼容: 保持与底层框架（Koa/Express）的兼容性
+ * 3. 低学习成本: 直观的API设计
+ * 4. 松耦合: 与框架其他部分保持低依赖
+ * 
  * @module router
  */
 
@@ -9,6 +15,7 @@ const Router = require('@koa/router');
 const path = require('path');
 const fs = require('fs');
 const RouterBuilder = require('./RouterBuilder');
+const { AutoRouter, createAutoRouter } = require('./AutoRouter');
 
 /**
  * 创建路由构建器实例
@@ -90,6 +97,43 @@ function loadRoutes(dir, app, options = {}) {
 }
 
 /**
+ * 生成API文档
+ * 
+ * @param {Array<Router>} routers - 路由数组
+ * @param {Object} options - 选项
+ * @returns {Object} API文档对象
+ */
+function generateApiDocs(routers, options = {}) {
+  // 简单实现，实际项目中可能需要更复杂的文档生成逻辑
+  const docs = {
+    title: options.title || 'API Documentation',
+    version: options.version || '1.0.0',
+    endpoints: []
+  };
+  
+  // 从AutoRouter获取路由信息
+  if (routers instanceof AutoRouter) {
+    docs.endpoints = routers.getRoutes();
+    return docs;
+  }
+  
+  // 从普通路由提取信息
+  routers.forEach(router => {
+    if (router.stack) {
+      router.stack.forEach(layer => {
+        docs.endpoints.push({
+          path: layer.path,
+          methods: layer.methods,
+          middleware: layer.stack.map(fn => fn.name || '匿名函数')
+        });
+      });
+    }
+  });
+  
+  return docs;
+}
+
+/**
  * 创建RESTful路由
  * 
  * @param {Router} router - 路由实例
@@ -142,12 +186,20 @@ function restful(router, path, controller, options = {}) {
   }
 }
 
-// 导出模块
+// 导出路由相关功能
 module.exports = {
+  // 核心类
+  Router,
+  RouterBuilder,
+  AutoRouter,
+  
+  // 工厂函数
   createRouter,
   createRouterBuilder,
-  RouterBuilder,
+  createAutoRouter,
+  
+  // 实用函数
   loadRoutes,
-  restful,
-  Router
+  generateApiDocs,
+  restful
 }; 

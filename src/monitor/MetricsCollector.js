@@ -143,6 +143,63 @@ class MetricsCollector extends EventEmitter {
   }
   
   /**
+   * 注册计数器指标
+   * 
+   * @param {string} name - 指标名称 
+   * @param {string} help - 指标描述
+   * @param {Array<string>} labelNames - 标签名称列表
+   * @param {Object} options - 指标选项
+   * @returns {Object} 创建的计数器指标
+   */
+  registerCounter(name, help, labelNames = [], options = {}) {
+    return this.registerMetric(name, 'counter', help, labelNames, options);
+  }
+  
+  /**
+   * 注册仪表盘指标
+   * 
+   * @param {string} name - 指标名称 
+   * @param {string} help - 指标描述
+   * @param {Array<string>} labelNames - 标签名称列表 
+   * @param {Object} options - 指标选项
+   * @returns {Object} 创建的仪表盘指标
+   */
+  registerGauge(name, help, labelNames = [], options = {}) {
+    return this.registerMetric(name, 'gauge', help, labelNames, options);
+  }
+  
+  /**
+   * 注册直方图指标
+   * 
+   * @param {string} name - 指标名称
+   * @param {string} help - 指标描述
+   * @param {Array<string>} labelNames - 标签名称列表
+   * @param {Array<number>} buckets - 分桶边界值
+   * @param {Object} options - 指标选项
+   * @returns {Object} 创建的直方图指标
+   */
+  registerHistogram(name, help, labelNames = [], buckets = null, options = {}) {
+    const histogramOptions = { ...options };
+    if (buckets) {
+      histogramOptions.buckets = buckets;
+    }
+    return this.registerMetric(name, 'histogram', help, labelNames, histogramOptions);
+  }
+  
+  /**
+   * 注册摘要指标
+   * 
+   * @param {string} name - 指标名称
+   * @param {string} help - 指标描述
+   * @param {Array<string>} labelNames - 标签名称列表
+   * @param {Object} options - 指标选项
+   * @returns {Object} 创建的摘要指标
+   */
+  registerSummary(name, help, labelNames = [], options = {}) {
+    return this.registerMetric(name, 'summary', help, labelNames, options);
+  }
+  
+  /**
    * 获取指标
    * 
    * @param {string} name - 指标名称
