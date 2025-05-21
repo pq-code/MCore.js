@@ -94,6 +94,11 @@ function responseHandler(options = {}) {
       if (ctx.status === 404 && !ctx.body) {
         ctx.notFound(`接口不存在: ${ctx.path}`);
       }
+      
+      // 如果响应体未设置，则包装一个成功响应
+      if (ctx.body === undefined) {
+        ctx.success(null);
+      }
     } catch (err) {
       // 记录错误
       ctx.app.emit('error', err, ctx);

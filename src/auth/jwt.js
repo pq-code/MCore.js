@@ -4,64 +4,57 @@
  */
 
 const jwt = require('jsonwebtoken');
+const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
-/**
- * 生成JWT令牌
- * @param {Object} payload 令牌载荷
- * @param {string} secret 密钥
- * @param {Object} options 配置选项
- * @returns {string} JWT令牌
- */
-function generateToken(payload, secret, options = {}) {
+class JWT {
+  static generateToken(payload, ctx) {
   try {
-    const defaultOptions = {
-      expiresIn: '24h' // 默认过期时间为24小时
-    };
-    
-    const mergedOptions = { ...defaultOptions, ...options };
-    return jwt.sign(payload, secret, mergedOptions);
+      const jwtConfig = ctx.app && ctx.app.config && ctx.app.config.jwt;
+      if (!jwtConfig || !jwtConfig.secret) {
+        throw new AppError('CONFIG_ERROR', 'JWT配置缺失', 500);
+      }
+      const { secret, expiresIn } = jwtConfig;
+      return jwt.sign(payload, secret, { expiresIn });
   } catch (error) {
     logger.error('生成JWT令牌失败', { error: error.message });
-    throw new Error(`生成JWT令牌失败: ${error.message}`);
+      throw new AppError('TOKEN_GENERATION_ERROR', error.message, 500);
   }
 }
 
-/**
- * 验证JWT令牌
- * @param {string} token JWT令牌
- * @param {string} secret 密钥
- * @returns {Object|null} 解码后的载荷，验证失败则返回null
- */
-function verifyToken(token, secret) {
-  try {
+  static verifyToken(token, ctx) {
+    try {
+      const jwtConfig = ctx.app && ctx.app.config && ctx.app.config.jwt;
+      if (!jwtConfig || !jwtConfig.secret) {
+        throw new AppError('CONFIG_ERROR', 'JWT配置缺失', 500);
+      }
+      const { secret } = jwtConfig;
     return jwt.verify(token, secret);
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      logger.warn('JWT令牌已过期', { error: error.message });
-    } else {
+        throw new AppError('TOKEN_EXPIRED', '令牌已过期', 401);
+      }
+      if (error.name === 'JsonWebTokenError') {
+        throw new AppError('INVALID_TOKEN', '无效的令牌', 401);
+      }
       logger.error('JWT令牌验证失败', { error: error.message });
-    }
-    return null;
+      throw new AppError('TOKEN_VERIFICATION_ERROR', error.message, 500);
   }
 }
 
-/**
- * 解码JWT令牌（不验证签名）
- * @param {string} token JWT令牌
- * @returns {Object|null} 解码后的载荷，解码失败则返回null
- */
-function decodeToken(token) {
-  try {
-    return jwt.decode(token);
+  static refreshToken(token, ctx) {
+    try {
+      const decoded = this.verifyToken(token, ctx);
+      // 删除时间戳相关字段，确保生成新令牌
+      const payload = { ...decoded };
+      delete payload.iat;
+      delete payload.exp;
+      return this.generateToken(payload, ctx);
   } catch (error) {
-    logger.error('解码JWT令牌失败', { error: error.message });
-    return null;
+      logger.error('刷新JWT令牌失败', { error: error.message });
+      throw new AppError('TOKEN_REFRESH_ERROR', error.message, 401);
+    }
   }
 }
 
-module.exports = {
-  generateToken,
-  verifyToken,
-  decodeToken
-}; 
+module.exports = JWT; 

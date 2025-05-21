@@ -31,7 +31,7 @@ class BaseApp {
     
     // 核心组件
     this.app = new Koa();
-    this.hooks = hooks.createHookSystem();
+    this.hooks = hooks.createHookManager();
     this.logger = new Logger(this.options.name);
     this.publicRouter = new Router();
     this.protectedRouter = new Router();
@@ -68,6 +68,8 @@ class BaseApp {
     
     // 配置基础中间件
     this._configureMiddleware();
+
+    console.log('BaseApp initialized',this.app);
   }
   
   /**
